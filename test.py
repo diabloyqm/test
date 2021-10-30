@@ -5,14 +5,134 @@ import numpy as np
 from torchvision import datasets, transforms
 import argparse
 from torch import nn
+import torch.nn.functional as F
+from tqdm import tqdm
+
 
 def mnist_iid(data, clients):
     per_clients = int(len(data) / clients)
     clients_dict, index_clients_dict = {}, [i for i in range(len(data))]
     for i in range(clients):
-        clients_dict = set(np.random.choice(index_clients_dict, per_clients, replace=True))
+        clients_dict[i] = set(np.random.choice(index_clients_dict, per_clients, replace=True))
         index_clients_dict = list(set(index_clients_dict) - clients_dict[i])
     return clients_dict
+
+def mnist_noniid(dataset, num_users):
+    """
+    Sample non-I.I.D client data from MNIST dataset
+    :param dataset:
+    :param num_users:
+    :return:
+    """
+    # 60,000 training imgs -->  200 imgs/shard X 300 shards
+    num_shards, num_imgs = 200, 300
+    idx_shard = [i for i in range(num_shards)]
+    dict_users = {i: np.array([]) for i in range(num_users)}
+    idxs = np.arange(num_shards*num_imgs)
+    labels = dataset.train_labels.numpy()
+
+    # sort labels
+    idxs_labels = np.vstack((idxs, labels))
+    idxs_labels = idxs_labels[:, idxs_labels[1, :].argsort()]
+    idxs = idxs_labels[0, :]
+
+    # divide and assign 2 shards/client
+    for i in range(num_users):
+        rand_set = set(np.random.choice(idx_shard, 2, replace=False))
+        idx_shard = list(set(idx_shard) - rand_set)
+        for rand in rand_set:
+            dict_users[i] = np.concatenate(
+                (dict_users[i], idxs[rand*num_imgs:(rand+1)*num_imgs]), axis=0)
+    return dict_users
+
+def mnist_noniid_unequal(dataset, num_users):
+    """
+    Sample non-I.I.D client data from MNIST dataset s.t clients
+    have unequal amount of data
+    :param dataset:
+    :param num_users:
+    :returns a dict of clients with each clients assigned certain
+    number of training imgs
+    """
+    # 60,000 training imgs --> 50 imgs/shard X 1200 shards
+    num_shards, num_imgs = 1200, 50
+    idx_shard = [i for i in range(num_shards)]
+    dict_users = {i: np.array([]) for i in range(num_users)}
+    idxs = np.arange(num_shards*num_imgs)
+    labels = dataset.train_labels.numpy()
+
+    # sort labels
+    idxs_labels = np.vstack((idxs, labels))
+    idxs_labels = idxs_labels[:, idxs_labels[1, :].argsort()]
+    idxs = idxs_labels[0, :]
+
+    # Minimum and maximum shards assigned per client:
+    min_shard = 1
+    max_shard = 30
+
+    # Divide the shards into random chunks for every client
+    # s.t the sum of these chunks = num_shards
+    random_shard_size = np.random.randint(min_shard, max_shard+1,
+                                          size=num_users)
+    random_shard_size = np.around(random_shard_size /
+                                  sum(random_shard_size) * num_shards)
+    random_shard_size = random_shard_size.astype(int)
+
+    # Assign the shards randomly to each client
+    if sum(random_shard_size) > num_shards:
+
+        for i in range(num_users):
+            # First assign each client 1 shard to ensure every client has
+            # atleast one shard of data
+            rand_set = set(np.random.choice(idx_shard, 1, replace=False))
+            idx_shard = list(set(idx_shard) - rand_set)
+            for rand in rand_set:
+                dict_users[i] = np.concatenate(
+                    (dict_users[i], idxs[rand*num_imgs:(rand+1)*num_imgs]),
+                    axis=0)
+
+        random_shard_size = random_shard_size-1
+
+        # Next, randomly assign the remaining shards
+        for i in range(num_users):
+            if len(idx_shard) == 0:
+                continue
+            shard_size = random_shard_size[i]
+            if shard_size > len(idx_shard):
+                shard_size = len(idx_shard)
+            rand_set = set(np.random.choice(idx_shard, shard_size,
+                                            replace=False))
+            idx_shard = list(set(idx_shard) - rand_set)
+            for rand in rand_set:
+                dict_users[i] = np.concatenate(
+                    (dict_users[i], idxs[rand*num_imgs:(rand+1)*num_imgs]),
+                    axis=0)
+    else:
+
+        for i in range(num_users):
+            shard_size = random_shard_size[i]
+            rand_set = set(np.random.choice(idx_shard, shard_size,
+                                            replace=False))
+            idx_shard = list(set(idx_shard) - rand_set)
+            for rand in rand_set:
+                dict_users[i] = np.concatenate(
+                    (dict_users[i], idxs[rand*num_imgs:(rand+1)*num_imgs]),
+                    axis=0)
+
+        if len(idx_shard) > 0:
+            # Add the leftover shards to the client with minimum images:
+            shard_size = len(idx_shard)
+            # Add the remaining shard to the client with lowest data
+            k = min(dict_users, key=lambda x: len(dict_users.get(x)))
+            rand_set = set(np.random.choice(idx_shard, shard_size,
+                                            replace=False))
+            idx_shard = list(set(idx_shard) - rand_set)
+            for rand in rand_set:
+                dict_users[k] = np.concatenate(
+                    (dict_users[k], idxs[rand*num_imgs:(rand+1)*num_imgs]),
+                    axis=0)
+
+    return dict_users
 
 
 def get_data(args):
@@ -21,8 +141,10 @@ def get_data(args):
                                                                                       (0.3081,))])
     train_dataset = datasets.MNIST(data_dir, train=True, download=True, transform=apply_transform)
     test_dataset = datasets.MNIST(data_dir, train=False, download=True, transform=apply_transform)
-
-    users_group = mnist_iid(train_dataset, args.num_users)
+    if args.iid ==1:
+        users_group = mnist_iid(train_dataset, args.num_users)
+    else:
+        users_group = mnist_noniid_unequal(train_dataset, args.num_users)
     return train_dataset, test_dataset, users_group
 
 
@@ -90,7 +212,7 @@ def test_inference(args,model,test_dataset):
 
     model.eval()
     loss, total, correct = 0.0, 0.0, 0.0
-    device = 'cuda' if args.gpu else 'cpu'
+    device = 'cpu' #'cuda' if args.gpu else
     criterion = nn.NLLLoss().to(device)
     testloader = DataLoader(test_dataset, batch_size=128, shuffle= False)
     for batch_idx, (images, labels) in enumerate(testloader):
@@ -130,6 +252,66 @@ class MLP(nn.Module):
         x = self.relu(x)
         x = self.layer_hidden(x)
         return self.softmax(x)
+
+if __name__ == '__main__':
+    args = args_parser()
+    if args.gpu ==1:
+        torch.cuda.set_device(args.gpu)
+    device = 'cpu'
+
+    train_dataset, test_dataset, _ = get_data(args)
+
+    if args.model =='mlp':
+        img_size = train_dataset[0][0].shape
+        len_in = 1
+        for x in img_size:
+            len_in *= x
+            global_model = MLP(dim_in = len_in, dim_hidden =64, dim_out = args.num_classes)
+    else :
+        exit('Error: unrecognized model')
+
+    global_model.to(device)
+    global_model.train()
+    print(global_model)
+
+    # Train
+    if args.optimizer == 'sgd':
+        optimizer = torch.optim.SGD(global_model.parameters(), lr=args.lr, momentum=0.5)
+    trainloader = DataLoader(train_dataset, batch_size=64, shuffle= True)
+    criterion = torch.nn.NLLLoss().to(device)
+    epoch_loss = []
+    for epoch in tqdm(range(args.epochs)):
+        batch_loss = []
+
+        for batch_idx, (images, labels) in enumerate(trainloader):
+            images, labels = images.to(device), labels.to(device)
+
+            optimizer.zero_grad()
+            outputs = global_model(images)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+
+            if batch_idx % 50 == 0 :
+                print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(epoch+1, batch_idx * len(images), len(trainloader.dataset),100. *batch_idx / len(trainloader),loss.item()))
+            batch_loss.append(loss.item())
+
+        loss_avg = sum(batch_loss)/len(batch_loss)
+        print('\nTrain loss:', loss_avg)
+
+
+
+    plt.figure()
+    plt.plot(range(len(epoch_loss)), epoch_loss)
+    plt.xlabel('epochs')
+    plt.ylabel('train loss')
+
+    # testing
+    test_acc, test_loss = test_inference(args, global_model, test_dataset)
+    print('Test on', len(test_dataset), 'samples')
+    print("Test Accuracy: {:.2f}%".format(100 * test_acc))
+
+
 
 
 
