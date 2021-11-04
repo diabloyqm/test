@@ -136,7 +136,7 @@ def mnist_noniid_unequal(dataset, num_users):
 
 
 def get_data(args):
-    data_dir = '../data/mnist'
+    data_dir = '../Users/yeqiming/Documents/GitHub/test/'
     apply_transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,),
                                                                                       (0.3081,))])
     train_dataset = datasets.MNIST(data_dir, train=True, download=True, transform=apply_transform)
