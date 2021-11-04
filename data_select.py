@@ -1,8 +1,8 @@
 from torchvision import datasets, transforms
 import numpy as np
-def get_mnist():
 mnist_trans = transforms.Compose([transforms.ToTensor()])
-mnist_data = datasets.MNIST(root ='../data/mnist',transform=mnist_trans)
+mnist_data = datasets.MNIST('../data/mnist',transform=mnist_trans)
+
 clients = 10
 per_clients = int(len(mnist_data) / clients)
 clients_dict, index_clients_dict = {}, [i for i in range(len(mnist_data))]
