@@ -1,19 +1,26 @@
 # this is the frame work of federated learning
 from get_data_function import get_data
+from parser import args_parser
+from model import MLP, CNN
 
 device = 'cpu'
+
 # load args parser
-from parser import args_parser
+args = args_parser()
 
 # first we need an api to get data
-args = args_parser()
-train_dataset, test_dataset = get_data()
+
+train_dataset, test_dataset = get_data(args)
 
 # second we need a model
+if args.model == 'cnn':
+    global_model = cnn(args=args)
 
-# global_model = your_model(dim_in =, dim_2 =, dim_3= )
+    # global_model = cnn(dim_in =, dim_2 =, dim_3= )
 
-# global_model.to(device)
+global_model.to(device)
+global_model.train()
+print(global_model)
 
 # let model be in training mode be cautious that we did not put data on it
 # global_model.train()
