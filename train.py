@@ -1,12 +1,13 @@
 # this is the frame work of federated learning
+from get_data_function import get_data
 
 device = 'cpu'
+# load args parser
+from parser import args_parser
 
 # first we need an api to get data
-
-# train_dataset=
-# test_dataset =
-
+args = args_parser()
+train_dataset, test_dataset = get_data()
 
 # second we need a model
 
@@ -27,7 +28,3 @@ device = 'cpu'
 # torch.nn.NLLLoss().to(device)
 
 # main epochs
-
-
-
-
