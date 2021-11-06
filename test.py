@@ -269,9 +269,9 @@ if __name__ == '__main__':
             global_model = MLP(dim_in = len_in, dim_hidden =64, dim_out = args.num_classes)
     else :
         exit('Error: unrecognized model')
-
     global_model.to(device)
     global_model.train()
+
     print(global_model)
 
     # Train
