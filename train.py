@@ -58,7 +58,7 @@ for epoch in tqdm(range(args.epochs)):
 
         if batch_index % 50==0:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(epoch+1, batch_index * len(images), len(data_loader.dataset),100. * batch_index / len(data_loader), loss.item()))
-        batch_loss.append(loss.items())
+        batch_loss.append(loss.item())
 
     loss_avg = sum(batch_loss)/len(batch_loss)
     print('\nTrain_loss:', loss_avg)
