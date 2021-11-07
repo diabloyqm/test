@@ -34,7 +34,7 @@ class CNN(nn.Module):
 
     def forward(self, pre):
         pre = self.relu(functional.max_pool2d(self.con1(pre), 2))
-        pre = self.relu(functional.max_pool2d(self.con_drop(self.con2(pre), 2)))
+        pre = self.relu(functional.max_pool2d(self.con_drop(self.con2(pre)), 2))
         pre = pre.view(-1, pre.shape[1]*pre.shape[2]*pre.shape[3])
         pre = self.l1(pre)
         pre = self.relu(pre)
