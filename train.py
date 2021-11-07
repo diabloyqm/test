@@ -62,13 +62,13 @@ for epoch in tqdm(range(args.epochs)):
 
     loss_avg = sum(batch_loss)/len(batch_loss)
     print('\nTrain_loss:', loss_avg)
+    epoch_loss.append(loss_avg)
 
 plt.figure()
 plt.plot(range(len(epoch_loss)), epoch_loss)
 plt.xlabel('epochs')
 plt.ylabel('train loss')
 plt.show()
-
 #test
 test_acc, test_loss = test_inference(args, global_model, test_dataset)
 print('Test on', len(test_dataset), 'samples')
