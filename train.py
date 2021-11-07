@@ -6,6 +6,7 @@ from parser import args_parser
 from model import MLP, CNN
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
+from test_infer import test_inference
 device = 'cpu'
 
 # load args parser
@@ -69,6 +70,8 @@ plt.ylabel('train loss')
 plt.show()
 
 #test
-
+test_acc, test_loss = test_inference(args, global_model, test_dataset)
+print('Test on', len(test_dataset), 'samples')
+print("Test Accuracy: {:.2f}%".format(100 * test_acc))
 
 
