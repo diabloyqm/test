@@ -37,7 +37,7 @@ elif args.optimizer == 'adam':
 
 # an important api that standardize dataset (into tensor)
 # DataLoader(train_dataset, batch_size=, shuffle=)
-data_loader = DataLoader(train_dataset, batch_size=50, shuffle=True)
+data_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
 
 #  tools for evaluation
 # torch.nn.NLLLoss().to(device)
