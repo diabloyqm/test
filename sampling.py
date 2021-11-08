@@ -4,7 +4,7 @@ import numpy as np
 def mnist_iid(data, clients):
     per_clients = int(len(data) / clients)
     dict_clients, clients_data = {}, [i for i in range(len(data))]
-    for i in range(len(clients)):
+    for i in range(clients):
         dict_clients[i] = set(np.random.choice(clients_data, per_clients, replace=False))
         clients_data = list(set(clients_data) - dict_clients[i])
     return dict_clients
