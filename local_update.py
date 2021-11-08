@@ -43,7 +43,7 @@ class LocalUpdate(object):
 
         # local optimizer
         if self.args.optimizer == 'sgd':
-            optimizer = torch.optim.SGD(model.parameters(), lr=self.arges.lr, momentum=0.5)
+            optimizer = torch.optim.SGD(model.parameters(), lr=self.args.lr, momentum=0.5)
         elif self.args.optimizer == 'adam':
             optimizer = torch.optim.Adam(model.parameters(), lr= self.args.lr, weight_decay=1e-4)
 
@@ -54,14 +54,14 @@ class LocalUpdate(object):
 
                 model.zero_grad()
                 log_probs = model(images)
-                loss = self.criterion(log_probs, labels)
+                loss = self.loss_function(log_probs, labels)
                 loss.backward()
                 optimizer.step()
 
                 if self.args.verbose and (batch_idx % 10 == 0):
                     print('| Global Round : {} | Local Epoch : {} | [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                         global_round, iter, batch_idx * len(images),
-                        len(self.trainloader.dataset), 100. * batch_idx / len(self.trainloader), loss.item()))
+                        len(self.train_loader.dataset), 100. * batch_idx / len(self.train_loader), loss.item()))
                 self.logger.add_scalar('loss', loss.item())
                 batch_loss.append(loss.item())
             epoch_loss.append(sum(batch_loss)/len(batch_loss))
@@ -77,7 +77,7 @@ class LocalUpdate(object):
             images, labels = images.to(self.device), labels.to(self.device)
 
             outputs = model(images)
-            batch_loss = self.criterion(outputs, labels)
+            batch_loss = self.loss_function(outputs, labels)
             loss += batch_loss.item()
 
             _, prediction = torch.max(outputs, 1)
@@ -87,7 +87,6 @@ class LocalUpdate(object):
 
         accuracy = correct/total
         return accuracy, loss
-
 
 
 
