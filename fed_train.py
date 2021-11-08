@@ -7,6 +7,7 @@ from model import MLP, CNN
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 from test_infer import test_inference
+import numpy as np
 device = 'cpu'
 
 # load args parser
@@ -29,40 +30,30 @@ global_model.to(device)
 global_model.train()
 print(global_model)
 
-# train the model e.g. sgd method
-if args.optimizer == 'sgd':
-    optimizer = torch.optim.SGD(global_model.parameters(), lr=args.lr, momentum=0.5)
-elif args.optimizer == 'adam':
-    optimizer = torch.optim.Adam(global_model.parameters(), lr=args.lr, weight_decay=1e-4)
+# every epochs means weight transformation
+global_weights = global_model.state_dict()
 
-# an important api that standardize dataset (into tensor)
-# DataLoader(train_dataset, batch_size=, shuffle=)
-data_loader = DataLoader(train_dataset, batch_size=50, shuffle=True)
+# training
+train_loss, train_accuracy = [], []
+val_acc_list, net_list = [], []
+cv_loss, cv_acc = [], []
+print_every = 2
+val_loss_pre, counter = 0, 0
 
-#  tools for evaluation
-# torch.nn.NLLLoss().to(device)
-loss_function = torch.nn.NLLLoss().to(device)
-
-# main epochs
-epoch_loss = []
 for epoch in tqdm(range(args.epochs)):
-    batch_loss = []
+    local_weights, local_losses = [], []
+    print(f'\n | Global Training Round : {epoch+1} |\n')
 
-    for batch_index, (images, labels) in enumerate(data_loader):
-        images, labels = images.to(device), labels.to(device)
+    global_model.train()
+    m = max(int(args.frac * args.num_users), 1)
+    idxs_users = np.random.choice(range(args.num_users), m, replace=False)
 
-        optimizer.zero_grad()
-        loss = loss_function(global_model(images), labels)
-        loss.backward()
-        optimizer.step()
+    for idx in idxs_users:
+        local_model = 
 
-        if batch_index % 50==0:
-            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(epoch+1, batch_index * len(images), len(data_loader.dataset),100. * batch_index / len(data_loader), loss.item()))
-        batch_loss.append(loss.item())
 
-    loss_avg = sum(batch_loss)/len(batch_loss)
-    print('\nTrain_loss:', loss_avg)
-    epoch_loss.append(loss_avg)
+
+
 
 plt.figure()
 plt.plot(range(len(epoch_loss)), epoch_loss)
