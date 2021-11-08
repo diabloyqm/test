@@ -69,7 +69,7 @@ for epoch in tqdm(range(args.epochs)):
     list_acc, list_loss = [], []
     global_model.eval()
     for c in range(args.num_users):
-        local_model = LocalUpdate(args=args, dataset=train_dataset, idxs=users_group[idx], logger=logger)
+        local_model = LocalUpdate(args=args, dataset=train_dataset, idx=users_group[idx], logger=logger)
         acc, loss = local_model.inference(model=global_model)
         list_acc.append(acc)
         list_loss.append(loss)
@@ -89,6 +89,13 @@ print("|---- Test Accuracy: {:.2f}%".format(100*test_acc))
 
 print('\n Total Run Time: {0:0.4f}'.format(time.time()-start_time))
 
+import matplotlib
+import matplotlib.pyplot as plt
 
-
+plt.figure()
+plt.title('Training Loss vs Communication rounds')
+plt.plot(range(len(train_loss)), train_loss, color='r')
+plt.ylabel('Training loss')
+plt.xlabel('Communication Rounds')
+plt.show()
 
