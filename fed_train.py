@@ -1,15 +1,21 @@
 # this is a baseline of federated learning
+import copy
+
 import torch.optim
+import time
 from tqdm import tqdm
-from get_data_function import get_data
+from get_data_function import get_data, average_weights
 from parser import args_parser
 from model import MLP, CNN
+from local_update import LocalUpdate
+from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 from test_infer import test_inference
 import numpy as np
 device = 'cpu'
-
+start_time = time.time()
+logger = SummaryWriter('../logs')
 # load args parser
 args = args_parser()
 
@@ -49,18 +55,40 @@ for epoch in tqdm(range(args.epochs)):
     idxs_users = np.random.choice(range(args.num_users), m, replace=False)
 
     for idx in idxs_users:
-        local_model = 
+        local_model = LocalUpdate(args=args, dataset=train_dataset, idx=users_group[idx], logger=logger)
+        w, loss = local_model.update_weights(model=copy.deepcopy(global_model), global_round=epoch)
+        local_weights.append(copy.deepcopy(w))
+        local_losses.append(copy.deepcopy(loss))
 
+    # update global weight
+    global_weights = average_weights(local_weights)
 
+    loss_avg = sum(local_losses)/len(local_losses)
+    train_loss.append(loss_avg)
 
+    list_acc, list_loss = [], []
+    global_model.eval()
+    for c in range(args.num_users):
+        local_model = LocalUpdate(args=args, dataset=train_dataset, idxs=users_group[idx], logger=logger)
+        acc, loss = local_model.inference(model=global_model)
+        list_acc.append(acc)
+        list_loss.append(loss)
 
+    train_accuracy.append(sum(list_acc)/len(list_acc))
+    if (epoch+1) % print_every ==0:
+        print(f' \nAvg Training Stats after {epoch + 1} global rounds:')
+        print(f'Training Loss : {np.mean(np.array(train_loss))}')
+        print('Train Accuracy: {:.2f}% \n'.format(100 * train_accuracy[-1]))
 
-plt.figure()
-plt.plot(range(len(epoch_loss)), epoch_loss)
-plt.xlabel('epochs')
-plt.ylabel('train loss')
-plt.show()
-#test
+# complete model and evaluate performance
 test_acc, test_loss = test_inference(args, global_model, test_dataset)
-print('Test on', len(test_dataset), 'samples')
-print("Test Accuracy: {:.2f}%".format(100 * test_acc))
+
+print(f' \n Results after {args.epochs} global rounds of training:')
+print("|---- Avg Train Accuracy: {:.2f}%".format(100*train_accuracy[-1]))
+print("|---- Test Accuracy: {:.2f}%".format(100*test_acc))
+
+print('\n Total Run Time: {0:0.4f}'.format(time.time()-start_time))
+
+
+
+
