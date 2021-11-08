@@ -12,5 +12,10 @@ def args_parser():
     parser.add_argument('--chan_numbers', type=int, default=1, help='number of channels of imgs')
     parser.add_argument('--epochs', type=int, default=10, help='number of loops you want to train')
     parser.add_argument('--num_users', type=int, default=100, help='number of users')
+    parser.add_argument('--local_bs', type=int, default=10, help='local batch size')
+    parser.add_argument('--momentum', type=float, default=0.5, help='SGD momentum')
+    parser.add_argument('--iid', type=int, default=1, help='iidness')
+    parser.add_argument('--verbose', type=int, default=1, help='verbose')
+    parser.add_argument('--local_ep', type=int, default=10, help='local epoch')
     args = parser.parse_args()
     return args
