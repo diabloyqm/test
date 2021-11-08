@@ -14,7 +14,7 @@ args = args_parser()
 
 # first we need an api to get data
 
-train_dataset, test_dataset = get_data(args)
+train_dataset, test_dataset, _ = get_data(args)
 
 # second we need a model
 if args.model == 'cnn':
