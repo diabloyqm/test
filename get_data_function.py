@@ -1,6 +1,8 @@
 from torchvision import datasets, transforms
 import numpy as np
 from sampling import mnist_iid, mnist_nonIID
+import copy
+import torch
 
 
 def get_data(args):
@@ -23,6 +25,17 @@ def get_data(args):
             users_group = mnist_nonIID(train_data, args.num_users)
     return train_data, test_data, users_group
 
+
+def average_weights(w):
+    """
+    Returns the average of the weights.
+    """
+    w_avg = copy.deepcopy(w[0])
+    for key in w_avg.keys():
+        for i in range(1, len(w)):
+            w_avg[key] += w[i][key]
+        w_avg[key] = torch.div(w_avg[key], len(w))
+    return w_avg
 # 超参数
 # clients = 10
 #
