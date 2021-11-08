@@ -7,7 +7,6 @@ from model import MLP, CNN
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 from test_infer import test_inference
-
 device = 'cpu'
 
 # load args parser
@@ -15,7 +14,7 @@ args = args_parser()
 
 # first we need an api to get data
 
-train_dataset, test_dataset = get_data(args)
+train_dataset, test_dataset, users_group = get_data(args)
 
 # second we need a model
 if args.model == 'cnn':
