@@ -7,7 +7,7 @@ import torch
 
 def get_data(args):
     if args.dataset == 'mnist':
-        mnist_trans = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))])
+        mnist_trans = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
         train_data = datasets.MNIST('../data/mnist/', train=True, download=True, transform=mnist_trans)
         test_data = datasets.MNIST('../data/mnist/', train=False, download=True, transform=mnist_trans)
         if args.iid == 1:
@@ -36,6 +36,7 @@ def average_weights(w):
             w_avg[key] += w[i][key]
         w_avg[key] = torch.div(w_avg[key], len(w))
     return w_avg
+
 # 超参数
 # clients = 10
 #
