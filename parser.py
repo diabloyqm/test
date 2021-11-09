@@ -14,7 +14,7 @@ def args_parser():
     parser.add_argument('--num_users', type=int, default=100, help='number of users')
     parser.add_argument('--local_bs', type=int, default=10, help='local batch size')
     parser.add_argument('--momentum', type=float, default=0.5, help='SGD momentum')
-    parser.add_argument('--iid', type=int, default=1, help='iidness')
+    parser.add_argument('--iid', type=int, default=0, help='iidness')
     parser.add_argument('--verbose', type=int, default=1, help='verbose')
     parser.add_argument('--local_ep', type=int, default=10, help='local epoch')
     parser.add_argument('--frac', type=float, default=0.1, help='the fraction during training')
