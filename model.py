@@ -28,6 +28,7 @@ class CNN(nn.Module):
         self.con2 = nn.Conv2d(in_channels=10, out_channels=20, kernel_size=(5, 5))
         self.con_drop = nn.Dropout2d()
         self.l1 = nn.Linear(320, 50)
+        self.BN = nn.BatchNorm1d(50)
         # the reason why 320 is not clear,
         self.l2 = nn.Linear(50, args.class_numbers)
         self.relu = nn.ReLU()
@@ -40,6 +41,7 @@ class CNN(nn.Module):
         pre = self.relu(pre)
         pre = functional.dropout(pre, training=self.training)
         pre = self.l2(pre)
+
         return functional.log_softmax(pre, dim=1)
 
 
