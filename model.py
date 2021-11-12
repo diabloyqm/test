@@ -25,17 +25,21 @@ class CNN(nn.Module):
     def __init__(self, args):
         super(CNN, self).__init__()
         self.con1 = nn.Conv2d(in_channels=args.chan_numbers, out_channels=10, kernel_size=(5, 5))
+        self.BN1 = nn.BatchNorm2d(10)
         self.con2 = nn.Conv2d(in_channels=10, out_channels=20, kernel_size=(5, 5))
+        self.BN2 = nn.BatchNorm2d(20)
         self.con_drop = nn.Dropout2d()
         self.l1 = nn.Linear(320, 50)
-        self.BN = nn.BatchNorm1d(50)
+        # self.GN = nn.GroupNorm(num_groups=2, num_channels=10, eps=1e-5, affine=True)
         # the reason why 320 is not clear,
         self.l2 = nn.Linear(50, args.class_numbers)
         self.relu = nn.ReLU()
 
     def forward(self, pre):
         pre = self.relu(functional.max_pool2d(self.con1(pre), 2))
+        # pre = self.GN(pre)
         pre = self.relu(functional.max_pool2d(self.con_drop(self.con2(pre)), 2))
+        #pre = self.BN2(pre)
         pre = pre.view(-1, pre.shape[1]*pre.shape[2]*pre.shape[3])
         pre = self.l1(pre)
         pre = self.relu(pre)
